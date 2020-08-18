@@ -3,7 +3,7 @@
 - Idea: Perform traffic shaping on both ends of veth-pair using Linux TC TBF
 - Test tool: iperf3
 - Image: zhuangweikang/k8stc
-- Total bandwidth: 1000mbps
+- K8s CNI plugin: Flannel
 
 ```shell script
 ubuntu@isislab11:~/K8sTC$ python3 main.py --help
