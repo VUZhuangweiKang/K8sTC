@@ -5,6 +5,7 @@
 - Image: zhuangweikang/k8stc
 - Total bandwidth: 1000mbps
 - Test purpose: Set bandwidth of two pods(server, client) to 500mbps  
+- K8s CNI plugin: Flannel
 
 ```shell script
 ubuntu@isislab11:~/K8sTC$ sudo python3 main.py 
