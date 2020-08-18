@@ -118,3 +118,11 @@ class K8sTC(object):
             for con_status in pod.status.container_statuses:
                 while con_status.state.running is None:
                     pass
+
+    def execute(self, cmd, pod):
+        result = stream(self.core_v1_api.connect_get_namespaced_pod_exec, name=pod, namespace='default',
+                        command=cmd, stderr=True, stdin=False, stdout=True, tty=False)
+        return result
+
+    def get_logs(self, pod):
+        return self.core_v1_api.read_namespaced_pod_log(name=pod, namespace='default')
