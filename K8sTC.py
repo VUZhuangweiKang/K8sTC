@@ -94,35 +94,35 @@ class K8sTC(object):
                                     stderr=True, stdin=False,
                                     stdout=True, tty=False)
                 # ifindex = iflink
-                veth_ifs[node].append(vifs[ifindex])
+                veth_ifs[node].append((pod, vifs[ifindex]))
         return veth_ifs
 
     def divide_pod_bw(self, factor, total_bw=1000):
         veths = self.get_container_veth()
+        pods = self.list_pods_name()
         for node in veths:
-            for pod in veths[node]:
+            for veth in veths[node]:
                 # set download BW in node
                 cmd = "ssh %s sudo tc qdisc add dev %s root tbf rate %dmbit latency 50ms burst 10000 mpu 64 mtu 15000" % (
-                node, pod, int(total_bw / factor))
+                node, veth[1], int(total_bw / factor))
                 subprocess.check_output(cmd, shell=True).decode()
 
                 # set upload BW in container
+                # set upload BW in container
                 cmd = "tc qdisc add dev eth0 root tbf rate %dmbit latency 50ms burst 10000 mpu 64 mtu 15000" % int(total_bw/factor)
-                stream(self.core_v1_api.connect_get_namespaced_pod_exec, name=pod, namespace='default',
+                stream(self.core_v1_api.connect_get_namespaced_pod_exec, name=veth[0], namespace='default',
                        command=cmd,
                        stderr=True, stdin=False,
                        stdout=True, tty=False)
 
-    def wait_pod_ready(self):
-        for pod in self.core_v1_api.list_namespaced_pod(namespace='default').items:
-            for con_status in pod.status.container_statuses:
-                while con_status.state.running is None:
-                    pass
-
-    def execute(self, cmd, pod):
-        result = stream(self.core_v1_api.connect_get_namespaced_pod_exec, name=pod, namespace='default',
-                        command=cmd, stderr=True, stdin=False, stdout=True, tty=False)
-        return result
-
-    def get_logs(self, pod):
-        return self.core_v1_api.read_namespaced_pod_log(name=pod, namespace='default')
+    def wait_pods_ready(self, pods):
+        while True:
+            try:
+                for pod in self.core_v1_api.list_namespaced_pod(namespace='default').items:
+                    for con_status in pod.status.container_statuses:
+                        if con_status.state.running is not None and pod.metadata.name in pods:
+                            pods.remove(pod.metadata.name)
+            except:
+                pass
+            if len(pods) == 0:
+                break
